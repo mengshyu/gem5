@@ -1041,6 +1041,10 @@ decode QUADRANT default Unknown::unknown() {
             }
         }
 
+        0x02: JOp::package({{
+            Rd = rvSext(NPC);
+        }}, IsDirectControl, IsUncondControl);
+
         0x03: decode FUNCT3 {
             format FenceOp {
                 0x0: fence({{

@@ -355,7 +355,6 @@ DynInst::execute()
     thread->noSquashFromTC = true;
 
     fault = staticInst->execute(this, traceData);
-
     thread->noSquashFromTC = no_squash_from_TC;
 
     return fault;

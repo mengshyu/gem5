@@ -1084,7 +1084,8 @@ IEW::printAvailableInsts()
 
         std::cout << "PC: " << fromIssue->insts[inst]->pcState()
              << " TN: " << fromIssue->insts[inst]->threadNumber
-             << " SN: " << fromIssue->insts[inst]->seqNum << " | ";
+             << " SN: " << fromIssue->insts[inst]->seqNum << " | "
+             << " NM: " << fromIssue->insts[inst]->staticInst->getName();
 
         inst++;
 
@@ -1109,7 +1110,7 @@ IEW::executeInsts()
 
     // Uncomment this if you want to see all available instructions.
     // @todo This doesn't actually work anymore, we should fix it.
-//    printAvailableInsts();
+   printAvailableInsts();
 
     // Execute/writeback any instructions that are available.
     int insts_to_execute = fromIssue->size;
@@ -1120,7 +1121,23 @@ IEW::executeInsts()
         DPRINTF(IEW, "Execute: Executing instructions from IQ.\n");
 
         DynInstPtr inst = instQueue.getInstToExecute();
+        DPRINTF(IEW, "exec inst name:%s\n", inst->staticInst->getName());
 
+        static bool vliw_start = false;
+        static int vliw_counter = -1;
+        if ("package" == inst->staticInst->getName()) {
+            vliw_start = true;
+            DPRINTF(IEW, "got package inst\n");
+            DPRINTF(IEW, "vliw_counter:%d\n", vliw_counter);
+            vliw_counter = 0;
+        } else {
+            if (vliw_start) {
+                vliw_counter++;
+                DPRINTF(IEW, "vliw bundle isnt:%s\n",
+                        inst->staticInst->getName());
+            }
+
+        }
         DPRINTF(IEW, "Execute: Processing PC %s, [tid:%i] [sn:%llu].\n",
                 inst->pcState(), inst->threadNumber,inst->seqNum);
 
@@ -1471,7 +1488,7 @@ IEW::tick()
 
         if (fromCommit->commitInfo[tid].nonSpecSeqNum != 0) {
 
-            //DPRINTF(IEW,"NonspecInst from thread %i",tid);
+            DPRINTF(IEW,"NonspecInst from thread %i",tid);
             if (fromCommit->commitInfo[tid].strictlyOrdered) {
                 instQueue.replayMemInst(
                     fromCommit->commitInfo[tid].strictlyOrderedLoad);
