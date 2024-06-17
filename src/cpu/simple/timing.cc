@@ -839,7 +839,6 @@ TimingSimpleCPU::completeIfetch(PacketPtr pkt)
 
 
     preExecute();
-
     // hardware transactional memory
     if (curStaticInst && curStaticInst->isHtmStart()) {
         // if this HtmStart is not within a transaction,
@@ -874,7 +873,6 @@ TimingSimpleCPU::completeIfetch(PacketPtr pkt)
     } else if (curStaticInst) {
         // non-memory instruction: execute completely now
         Fault fault = curStaticInst->execute(&t_info, traceData);
-
         // keep an instruction count
         if (fault == NoFault)
             countInst();
@@ -1084,6 +1082,24 @@ TimingSimpleCPU::updateCycleCounts()
     baseStats.numCycles += delta;
 
     previousCycle = curCycle();
+
+    if (curStaticInst) {
+        DPRINTF(SimpleCPU, "exec inst: %s\n", curStaticInst->getName());
+        static bool vliw_start = false;
+        static int vliw_counter = -1;
+
+        if ("package" == curStaticInst->getName()) {
+            vliw_start = true;
+            DPRINTF(SimpleCPU, "vliw counter:%d\n", vliw_counter);
+            vliw_counter = 0;
+        } else {
+            if (vliw_start) {
+                vliw_counter++;
+                DPRINTF(SimpleCPU, "vliw bundle inst:%s\n",
+                        curStaticInst->getName());
+            }
+        }
+    }
 }
 
 void
