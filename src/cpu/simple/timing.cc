@@ -819,6 +819,25 @@ void
 TimingSimpleCPU::completeIfetch(PacketPtr pkt)
 {
     SimpleExecContext& t_info = *threadInfo[curThread];
+    startCycle = previousCycle;
+
+    if (curStaticInst) {
+        DPRINTFN("Instruction : %s\n", curStaticInst->getName());
+        if (curStaticInst->getName() == "package") {
+            if (packageCnt != -1) {
+                vliwTotalCycle += maxCycle;
+                baseStats.vliwNumCycles += maxCycle;
+            }
+            packageCnt = 0;
+            maxCycle = (uint64_t)0;
+        } else if (packageCnt == 6) {
+            packageCnt = -1;
+            vliwTotalCycle += maxCycle;
+            baseStats.vliwNumCycles += maxCycle;
+        } else {
+            if (packageCnt != -1) packageCnt++;
+        }
+    }
 
     DPRINTF(SimpleCPU, "Complete ICache Fetch for addr %#x\n", pkt ?
             pkt->getAddr() : 0);
@@ -850,7 +869,6 @@ TimingSimpleCPU::completeIfetch(PacketPtr pkt)
         DPRINTF(HtmCpu, "htmTransactionStarts++=%u\n",
             thread->htmTransactionStarts);
     }
-
     if (curStaticInst && curStaticInst->isMemRef()) {
         // load or store: just send to dcache
         Fault fault = curStaticInst->initiateAcc(&t_info, traceData);
@@ -868,6 +886,10 @@ TimingSimpleCPU::completeIfetch(PacketPtr pkt)
             if (curStaticInst && (!curStaticInst->isMicroop() ||
                         curStaticInst->isFirstMicroop()))
                 instCnt++;
+            const Cycles delta(previousCycle - startCycle);
+            maxCycle = std::max((uint64_t)maxCycle, (uint64_t)(delta));
+            totalCycle += delta;
+            if (packageCnt != -1) baseStats.nonVliwNumCycles += delta;
             advanceInst(fault);
         }
     } else if (curStaticInst) {
@@ -885,6 +907,10 @@ TimingSimpleCPU::completeIfetch(PacketPtr pkt)
         if (curStaticInst && (!curStaticInst->isMicroop() ||
                 curStaticInst->isFirstMicroop()))
             instCnt++;
+        const Cycles delta(previousCycle - startCycle);
+        maxCycle = std::max((uint64_t)maxCycle, (uint64_t)(delta));
+        totalCycle += delta;
+        if (packageCnt != -1) baseStats.nonVliwNumCycles += delta;
         advanceInst(fault);
     } else {
         advanceInst(NoFault);
@@ -1070,7 +1096,10 @@ TimingSimpleCPU::completeDataAccess(PacketPtr pkt)
     delete pkt;
 
     postExecute();
-
+    const Cycles delta(previousCycle - startCycle);
+    maxCycle = std::max((uint64_t)maxCycle, (uint64_t)(delta));
+    totalCycle = (uint64_t)totalCycle + (uint64_t)(delta);
+    if (packageCnt != -1) baseStats.nonVliwNumCycles += delta;
     advanceInst(fault);
 }
 
@@ -1082,24 +1111,6 @@ TimingSimpleCPU::updateCycleCounts()
     baseStats.numCycles += delta;
 
     previousCycle = curCycle();
-
-    if (curStaticInst) {
-        DPRINTF(SimpleCPU, "exec inst: %s\n", curStaticInst->getName());
-        static bool vliw_start = false;
-        static int vliw_counter = -1;
-
-        if ("package" == curStaticInst->getName()) {
-            vliw_start = true;
-            DPRINTF(SimpleCPU, "vliw counter:%d\n", vliw_counter);
-            vliw_counter = 0;
-        } else {
-            if (vliw_start) {
-                vliw_counter++;
-                DPRINTF(SimpleCPU, "vliw bundle inst:%s\n",
-                        curStaticInst->getName());
-            }
-        }
-    }
 }
 
 void

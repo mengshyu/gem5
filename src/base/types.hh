@@ -135,6 +135,13 @@ class Cycles
         return Cycles(c >> shift);
     }
 
+    Cycles& operator=(uint64_t _c)
+    {
+        c = _c;
+        return *this;
+    }
+
+
     friend std::ostream& operator<<(std::ostream &out, const Cycles & cycles);
 };
 

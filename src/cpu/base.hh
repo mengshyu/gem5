@@ -638,7 +638,11 @@ class BaseCPU : public ClockedObject
         statistics::Scalar numOps;
         // Number of CPU cycles simulated
         statistics::Scalar numCycles;
+        statistics::Scalar vliwNumCycles;
+        statistics::Scalar nonVliwNumCycles;
         /* CPI/IPC for total cycle counts and macro insts */
+        statistics::Formula vliwSimSeconds;
+        statistics::Formula nonVliwSimSeconds;
         statistics::Formula cpi;
         statistics::Formula ipc;
         statistics::Scalar numWorkItemsStarted;

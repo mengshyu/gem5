@@ -262,6 +262,13 @@ class TimingSimpleCPU : public BaseSimpleCPU
     PacketPtr dcache_pkt;
 
     Cycles previousCycle;
+    Cycles startCycle;
+    Cycles maxCycle;
+    Cycles vliwTotalCycle;
+    Cycles totalCycle;
+    std::string prevInstruction = "";
+    bool isSameMicroInst;
+    int packageCnt = -1;
 
   protected:
 

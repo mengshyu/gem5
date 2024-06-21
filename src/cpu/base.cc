@@ -409,6 +409,14 @@ BaseCPUStats::BaseCPUStats(statistics::Group *parent)
     : statistics::Group(parent),
       ADD_STAT(numCycles, statistics::units::Cycle::get(),
                "Number of cpu cycles simulated"),
+      ADD_STAT(vliwNumCycles, statistics::units::Cycle::get(),
+               "Number of cpu cycles with vliw simulated"),
+      ADD_STAT(nonVliwNumCycles, statistics::units::Cycle::get(),
+               "Number of cpu cycles without vliw simulated"),
+      ADD_STAT(vliwSimSeconds, statistics::units::Second::get(),
+               "Number of seconds with vliw simulated"),
+      ADD_STAT(nonVliwSimSeconds, statistics::units::Second::get(),
+             "Number of seconds without vliw simulated"),
       ADD_STAT(cpi, statistics::units::Rate<
                 statistics::units::Cycle, statistics::units::Count>::get(),
                "CPI: cycles per instruction (core level)"),
@@ -425,6 +433,12 @@ BaseCPUStats::BaseCPUStats(statistics::Group *parent)
 
     ipc.precision(6);
     ipc = numInsts / numCycles;
+
+    vliwSimSeconds = vliwNumCycles *
+                     500 / 1000000000000;
+
+    nonVliwSimSeconds = nonVliwNumCycles *
+                     500 / 1000000000000;
 }
 
 void
